@@ -1,0 +1,40 @@
+/*
+ * Copyright 2016 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.passcode.authentication
+
+import play.api.mvc._
+import uk.gov.hmrc.play.config.RunMode
+import uk.gov.hmrc.play.frontend.auth.{SessionTimeoutWrapper, AuthenticationProvider}
+
+import uk.gov.hmrc.play.http.SessionKeys
+import scala.concurrent.ExecutionContext.Implicits.global
+
+object WithSessionTimeoutAndRedirectUrl extends SessionTimeoutWrapper with RunMode {
+
+  def apply(authProvider: AuthenticationProvider)(action: Action[AnyContent]): Action[AnyContent] = Action.async {
+    implicit request =>
+    val actionWithTimeOut = WithSessionTimeoutValidation(authProvider)(action)
+    actionWithTimeOut(request) map addRedirectUrl
+  }
+
+  def addRedirectUrl(implicit request: Request[_]): Result => Result = e =>
+    e.addingToSession(SessionKeys.redirect -> buildRedirectUrl(request))
+
+  private[authentication] def buildRedirectUrl(req: Request[_]) =
+    if (env != "Prod") s"http${if (req.secure) "s" else ""}://${req.host}${req.path}" else req.path
+
+}
