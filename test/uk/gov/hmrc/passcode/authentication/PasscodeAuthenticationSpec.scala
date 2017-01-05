@@ -44,7 +44,7 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
   override protected def afterEach(): Unit = {
     super.afterEach()
-    Play.stop()
+    Play.stop(fakeApplication)
   }
 
 
@@ -146,9 +146,9 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
       implicit val req = FakeRequest("GET", s"$currentUrl?p=$otac").withHeaders(("host", host))
         .withSession(SessionKeys.otacToken -> GOOD_BEARER_TOKEN, SessionKeys.lastRequestTimestamp -> expiredTimestamp)
 
-      val user = LoggedInUser("test", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+      val user = LoggedInUser("test", None, None, None, CredentialStrength.None, ConfidenceLevel.L0, oid = "test")
       val principal = Principal(None, Accounts())
-      implicit val authContext = AuthContext(user, principal, None, None, None)
+      implicit val authContext = AuthContext(user, principal, None, None, None, None)
 
       val result = await(tested.verify(regime, theResponseBody))
       status(result) shouldBe 200
@@ -177,6 +177,7 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
     override def cookies = ???
 
     override def json = Json.toJson(body)
+    override def bodyAsBytes = ???
   }
 
 }

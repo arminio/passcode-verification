@@ -32,12 +32,16 @@ class PasscodeVerificationConfigSpec extends UnitSpec with BeforeAndAfterEach {
     "govuk-tax.Test.services.verification-frontend.port" -> port)
 
   val config = configWithoutKeys + ("passcodeAuthentication.enabled" -> "true") + ("passcodeAuthentication.regime" -> regime)
+  var app: Option[FakeApplication] = None
 
-  def fakeApplication(withConfig: Map[String, String] = config) = FakeApplication(additionalConfiguration = withConfig)
+  def fakeApplication(withConfig: Map[String, String] = config) = {
+    app = Some(FakeApplication(additionalConfiguration = withConfig))
+    app.get
+  }
 
   override def afterEach() {
     super.afterEach()
-    Play.stop()
+    app.map(Play.stop)
   }
 
   "Calling enable on PasscodeVerificationConfig" should {

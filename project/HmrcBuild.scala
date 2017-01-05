@@ -9,7 +9,7 @@ object HmrcBuild extends Build {
   val appName = "passcode-verification"
 
   lazy val library = (project in file("."))
-    .enablePlugins(play.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning)
+    .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning)
     .settings(
       name := appName,
       scalaVersion := "2.11.7",
@@ -25,23 +25,24 @@ object HmrcBuild extends Build {
 
 private object AppDependencies {
 
-  import play.PlayImport._
+  import play.sbt.PlayImport._
   import play.core.PlayVersion
 
   val compile = Seq(
     "com.typesafe.play" %% "play" % PlayVersion.current % "provided",
     ws % "provided",
-    "uk.gov.hmrc" %% "play-authorised-frontend" % "5.5.0",
-    "uk.gov.hmrc" %% "play-config" % "2.0.1",
-    "uk.gov.hmrc" %% "play-auditing" % "1.9.0"
+    "uk.gov.hmrc" %% "play-authorised-frontend" % "6.2.0",
+    "uk.gov.hmrc" %% "play-config" % "3.0.0",
+    "uk.gov.hmrc" %% "play-auditing" % "2.4.0"
   )
 
   val testScope: String = "test"
 
   val test = Seq(
-    "org.scalatest" %% "scalatest" % "2.2.1" % testScope,
+    "org.scalatest" %% "scalatest" % "2.2.6" % testScope,
+    "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % testScope,
     "org.pegdown" % "pegdown" % "1.4.2" % testScope,
-    "uk.gov.hmrc" %% "hmrctest" % "1.4.0" % testScope
+    "uk.gov.hmrc" %% "hmrctest" % "2.1.0" % testScope
 
   )
 

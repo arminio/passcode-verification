@@ -34,7 +34,7 @@ class WithSessionTimeoutAndRedirectUrlSpec extends UnitSpec with WithFakeApplica
   "WithSessionTimeoutAndRedirectUrl" should {
     "wrap the call in a session timeout and add redirect url" in {
       val myResult = Ok("All good!")
-      val headers = FakeHeaders(Seq(("host", Seq(host))))
+      val headers = FakeHeaders(Seq(("host", host)))
       implicit val request: FakeRequest[AnyContent] = FakeRequest(method = "GET", uri = path, headers = headers, secure = false, body = AnyContentAsEmpty)
 
       val result = await(WithSessionTimeoutAndRedirectUrl(authProvider)(Action(myResult))(request))
@@ -47,7 +47,7 @@ class WithSessionTimeoutAndRedirectUrlSpec extends UnitSpec with WithFakeApplica
 
     "call redirectToLogin from authProvider if the timestamp has expired" in {
       val passedTimeStamp = "1000"
-      val headers = FakeHeaders(Seq(("host", Seq(host))))
+      val headers = FakeHeaders(Seq(("host", host)))
       implicit val request = FakeRequest(method = "GET", uri = path, headers = headers, secure = false, body = AnyContentAsEmpty).withSession(SessionKeys.lastRequestTimestamp -> passedTimeStamp)
 
       val result = await(WithSessionTimeoutAndRedirectUrl(authProvider)(Action(Ok))(request))
@@ -63,14 +63,14 @@ class WithSessionTimeoutAndRedirectUrlSpec extends UnitSpec with WithFakeApplica
   "buildRedirectUrl" should {
 
     "build the redirect url from the request for secure protocol" in {
-      val headers = FakeHeaders(Seq(("host", Seq(host))))
+      val headers = FakeHeaders(Seq(("host", host)))
       val request: FakeRequest[AnyContent] = FakeRequest(method = "GET", uri = path, headers = headers, secure = true, body = AnyContentAsEmpty)
       val url = WithSessionTimeoutAndRedirectUrl.buildRedirectUrl(request)
       url shouldBe s"https://$host$path"
     }
 
     "build the redirect url from the session for unsecure protocol" in {
-      val headers = FakeHeaders(Seq(("host", Seq(host))))
+      val headers = FakeHeaders(Seq(("host", host)))
       val request: FakeRequest[AnyContent] = FakeRequest(method = "GET", uri = path, headers = headers, secure = false, body = AnyContentAsEmpty)
       val url = WithSessionTimeoutAndRedirectUrl.buildRedirectUrl(request)
       url shouldBe s"http://$host$path"
@@ -85,7 +85,7 @@ class WithSessionTimeoutAndRedirectUrlSpec extends UnitSpec with WithFakeApplica
 
   "addRedirectUrl" should {
     "add the redirect url to the session" in {
-      val headers = FakeHeaders(Seq(("host", Seq(host))))
+      val headers = FakeHeaders(Seq(("host", host)))
       implicit val request: FakeRequest[AnyContent] = FakeRequest(method = "GET", uri = path, headers = headers, secure = false, body = AnyContentAsEmpty)
       val result = await(Future.successful(Ok) map WithSessionTimeoutAndRedirectUrl.addRedirectUrl(request))
       result.session.get(SessionKeys.redirect) shouldBe Some(s"http://$host$path")
