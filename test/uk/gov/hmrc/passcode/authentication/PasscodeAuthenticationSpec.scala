@@ -73,15 +73,17 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
   val currentUrl = "/my-url"
 
+  def tested: TestProvider = {
+      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
+      new TestProvider(passcodeConfig)
+  }
+
   "PasscodeAuthenticatedAction" should {
 
 
     "return theResponseBody if auth is disabled" in {
 
       Play.start(FakeApplication(additionalConfiguration = config(authEnabled = false)))
-      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
-      val tested = new TestProvider(passcodeConfig)
-
       val req = FakeRequest("GET", s"$currentUrl?p=$otac")
 
       val result = await(tested.ActionAsync(regime, _ => theResponseBody).apply(req))
@@ -92,8 +94,6 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
     "return theResponseBody if there is a valid bearer token" in {
 
       Play.start(fakeApplication)
-      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
-      val tested = new TestProvider(passcodeConfig)
 
       val req = FakeRequest("GET", s"$currentUrl?p=$otac").withSession(SessionKeys.otacToken -> GOOD_BEARER_TOKEN)
 
@@ -104,8 +104,6 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
     "redirect to verification-frontend if the bearer token is invalid" in {
       Play.start(fakeApplication)
-      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
-      val tested = new TestProvider(passcodeConfig)
 
       implicit val req = FakeRequest("GET", s"$currentUrl?p=$otac").withHeaders(("host", host)).withSession(SessionKeys.otacToken -> "wrong bearer token")
 
@@ -115,8 +113,6 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
     "redirect to verification-frontend if there isn't a bearer token" in {
       Play.start(fakeApplication)
-      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
-      val tested = new TestProvider(passcodeConfig)
 
       implicit val req = FakeRequest("GET", s"$currentUrl?p=$otac").withHeaders(("host", host))
 
@@ -126,8 +122,6 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
     "redirect to verification-frontend when the session has a correct bearer token but has has expired" in {
       Play.start(fakeApplication)
-      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
-      val tested = new TestProvider(passcodeConfig)
 
       implicit val req = FakeRequest("GET", s"$currentUrl?p=$otac").withHeaders(("host", host))
         .withSession(SessionKeys.otacToken -> GOOD_BEARER_TOKEN, SessionKeys.lastRequestTimestamp -> expiredTimestamp)
@@ -138,8 +132,6 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
     "do not redirect to verification-frontend when the session has a correct bearer token but has has expired, if auth is disabled" in {
       Play.start(FakeApplication(additionalConfiguration = config(authEnabled = false)))
-      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
-      val tested = new TestProvider(passcodeConfig)
 
       implicit val req = FakeRequest("GET", s"$currentUrl?p=$otac").withHeaders(("host", host))
         .withSession(SessionKeys.otacToken -> GOOD_BEARER_TOKEN, SessionKeys.lastRequestTimestamp -> expiredTimestamp)
@@ -155,8 +147,6 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
     "do not redirect to verification-frontend when the session has a correct bearer token but has has expired, if auth is disabled" in {
       Play.start(FakeApplication(additionalConfiguration = config(authEnabled = false)))
 
-      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
-      val tested = new TestProvider(passcodeConfig)
       implicit val req = FakeRequest("GET", s"$currentUrl?p=$otac").withHeaders(("host", host))
         .withSession(SessionKeys.otacToken -> GOOD_BEARER_TOKEN, SessionKeys.lastRequestTimestamp -> expiredTimestamp)
 
