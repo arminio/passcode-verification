@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package uk.gov.hmrc.passcode.authentication
 
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
-import uk.gov.hmrc.passcode.authentication.PasscodeVerificationConfig._
 import uk.gov.hmrc.passcode.authentication.PlayRequestTypes._
 import uk.gov.hmrc.passcode.authentication.WithSessionTimeoutAndRedirectUrl._
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, AuthenticationProvider}
@@ -26,6 +25,8 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HeaderNames, SessionKeys}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import javax.inject.Singleton
+import javax.inject.Inject
 
 
 object PlayRequestTypes {
@@ -35,42 +36,43 @@ object PlayRequestTypes {
 
 trait PasscodeAuthentication {
 
-  val regime: String = PasscodeVerificationConfig.regime
+  def config: PasscodeVerificationConfig
+  def passcodeAuthenticationProvider: PasscodeAuthenticationProvider
+  lazy val regime = config.regime
 
   private def invokeAsync(body: PlayRequest)(request: Request[_]): Future[Result] = Future.successful(body(request))
 
   def PasscodeAuthenticatedAction(body: PlayRequest) = PasscodeAuthenticatedActionAsync(invokeAsync(body))
 
-  def PasscodeAuthenticatedActionAsync(body: => AsyncPlayRequest) = PasscodeAuthenticationProvider.ActionAsync(regime, body)
+  def PasscodeAuthenticatedActionAsync(body: => AsyncPlayRequest) = passcodeAuthenticationProvider.ActionAsync(regime, body)
 
   def withVerifiedPasscode(body: => Future[Result])
-                          (implicit request: Request[_], user: AuthContext): Future[Result] = PasscodeAuthenticationProvider.verify(regime, body)
+                          (implicit request: Request[_], user: AuthContext): Future[Result] = passcodeAuthenticationProvider.verify(regime, body)
 }
 
-private object PasscodeAuthenticationProvider extends PasscodeAuthenticationProvider
 
-private[authentication] trait PasscodeAuthenticationProvider extends AuthenticationProvider with Results {
-
+@Singleton
+class PasscodeAuthenticationProvider @Inject() (config: PasscodeVerificationConfig) extends AuthenticationProvider with Results {
 
   override def id: String = "OTAC"
 
   override def redirectToLogin(implicit request: Request[_]): Future[Result] =
-    Future.successful(Redirect(loginUrl(request)).withNewSession)
+    Future.successful(Redirect(config.loginUrl(request)).withNewSession)
 
   override def handleNotAuthenticated(implicit request: Request[_]) = {
-    case _ => Future.successful(Redirect(logoutUrl)).map(Right(_))
+    case _ => Future.successful(Redirect(config.logoutUrl)).map(Right(_))
   }
 
 
   def verify(regime: String, body: => Future[Result])(implicit request: Request[_], user: AuthContext): Future[Result] = {
-    def failed = Future.successful(Redirect(loginUrl(request))) map addRedirectUrl(request)
+    def failed = Future.successful(Redirect(config.loginUrl(request))) map addRedirectUrl(request)
 
-    if (enabled) hasValidBearerToken(regime).flatMap(if (_) body else failed)
+    if (config.enabled) hasValidBearerToken(regime).flatMap(if (_) body else failed)
     else body
   }
 
   def ActionAsync(regime: String, body: => AsyncPlayRequest) = {
-    if (enabled) WithSessionTimeoutAndRedirectUrl(authProvider = this) {
+    if (config.enabled) WithSessionTimeoutAndRedirectUrl(authProvider = this) {
       Action.async { implicit request =>
         hasValidBearerToken(regime).flatMap(if (_) body(request) else redirectToLogin)
       }

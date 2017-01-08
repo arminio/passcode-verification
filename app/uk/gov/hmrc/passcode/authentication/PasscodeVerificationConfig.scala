@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,26 @@
 
 package uk.gov.hmrc.passcode.authentication
 
+import javax.inject._
+
 import uk.gov.hmrc.play.config.ServicesConfig
 import play.api.mvc.Request
-import play.api.Play
-import play.api.Play.current
+import play.api.Configuration
 
 class PasscodeVerificationException(msg: String) extends RuntimeException(msg)
 
-object PasscodeVerificationConfig extends ServicesConfig {
+@Singleton
+class PasscodeVerificationConfig @Inject() (configuration: Configuration) extends ServicesConfig {
 
   private[authentication] val tokenParam = "p"
   private val passcodeEnabledKey = "passcodeAuthentication.enabled"
   private val passcodeRegimeKey = "passcodeAuthentication.regime"
 
-  def enabled: Boolean = Play.configuration.getBoolean(passcodeEnabledKey).getOrElse(throwConfigNotFound(passcodeEnabledKey))
+  def enabled: Boolean = configuration.getBoolean(passcodeEnabledKey).getOrElse(throwConfigNotFound(passcodeEnabledKey))
 
-  def regime: String = Play.configuration.getString(passcodeRegimeKey).getOrElse(throwConfigNotFound(passcodeRegimeKey))
+  def regime: String = configuration.getString(passcodeRegimeKey).getOrElse(throwConfigNotFound(passcodeRegimeKey))
 
-  def getVerificationURL() = Play.current.configuration.getString(s"govuk-tax.$env.url.verification-frontend.redirect").getOrElse("/")
+  def getVerificationURL() = configuration.getString(s"govuk-tax.$env.url.verification-frontend.redirect").getOrElse("/")
 
   def loginUrl(request: Request[_]) = s"$getVerificationURL/otac/login${tokenQueryParam(request)}"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,14 +44,14 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
   override protected def afterEach(): Unit = {
     super.afterEach()
-    Play.stop()
+    Play.stop(fakeApplication)
   }
 
 
   val GOOD_BEARER_TOKEN: String = "good-bearer-token"
   val expiredTimestamp = DateTimeUtils.now.minusHours(10).getMillis.toString
 
-  object tested extends PasscodeAuthenticationProvider {
+  class TestProvider(config: PasscodeVerificationConfig) extends PasscodeAuthenticationProvider(config) {
     override lazy val authorisationConnector = new AuthorisationConnector {
       override lazy val authBaseUrl = ???
       override def checkAuthorisationFor(regime: String)(implicit hcWithAuthorisation: HeaderCarrier) =
@@ -73,13 +73,17 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
 
   val currentUrl = "/my-url"
 
+  def tested: TestProvider = {
+      val passcodeConfig = Play.current.injector.instanceOf[PasscodeVerificationConfig]
+      new TestProvider(passcodeConfig)
+  }
 
   "PasscodeAuthenticatedAction" should {
+
 
     "return theResponseBody if auth is disabled" in {
 
       Play.start(FakeApplication(additionalConfiguration = config(authEnabled = false)))
-
       val req = FakeRequest("GET", s"$currentUrl?p=$otac")
 
       val result = await(tested.ActionAsync(regime, _ => theResponseBody).apply(req))
@@ -146,9 +150,9 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
       implicit val req = FakeRequest("GET", s"$currentUrl?p=$otac").withHeaders(("host", host))
         .withSession(SessionKeys.otacToken -> GOOD_BEARER_TOKEN, SessionKeys.lastRequestTimestamp -> expiredTimestamp)
 
-      val user = LoggedInUser("test", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+      val user = LoggedInUser("test", None, None, None, CredentialStrength.None, ConfidenceLevel.L0, oid = "test")
       val principal = Principal(None, Accounts())
-      implicit val authContext = AuthContext(user, principal, None, None, None)
+      implicit val authContext = AuthContext(user, principal, None, None, None, None)
 
       val result = await(tested.verify(regime, theResponseBody))
       status(result) shouldBe 200
@@ -177,6 +181,7 @@ class PasscodeAuthenticationSpec extends UnitSpec with Results with BeforeAndAft
     override def cookies = ???
 
     override def json = Json.toJson(body)
+    override def bodyAsBytes = ???
   }
 
 }

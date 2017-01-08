@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,25 +32,29 @@ class PasscodeVerificationConfigSpec extends UnitSpec with BeforeAndAfterEach {
     "govuk-tax.Test.services.verification-frontend.port" -> port)
 
   val config = configWithoutKeys + ("passcodeAuthentication.enabled" -> "true") + ("passcodeAuthentication.regime" -> regime)
+  var app: Option[FakeApplication] = None
 
-  def fakeApplication(withConfig: Map[String, String] = config) = FakeApplication(additionalConfiguration = withConfig)
+  def fakeApplication(withConfig: Map[String, String] = config) = {
+    app = Some(FakeApplication(additionalConfiguration = withConfig))
+    app.get
+  }
 
   override def afterEach() {
     super.afterEach()
-    Play.stop()
+    app.map(Play.stop)
   }
 
   "Calling enable on PasscodeVerificationConfig" should {
     "return the value from the config" in {
       Play.start(fakeApplication(config))
-      PasscodeVerificationConfig.enabled shouldBe true
+      app.get.injector.instanceOf[PasscodeVerificationConfig].enabled shouldBe true
     }
 
     "throw an exception if it could not find it in the config" in {
       Play.start(fakeApplication(configWithoutKeys))
 
       intercept[PasscodeVerificationException] {
-        PasscodeVerificationConfig.enabled
+        app.get.injector.instanceOf[PasscodeVerificationConfig].enabled
       }.getMessage should not be empty
 
     }
@@ -59,14 +63,14 @@ class PasscodeVerificationConfigSpec extends UnitSpec with BeforeAndAfterEach {
   "Calling regime on PasscodeVerificationConfig" should {
     "return the value from the config" in {
       Play.start(fakeApplication(config))
-      PasscodeVerificationConfig.regime shouldBe regime
+      app.get.injector.instanceOf[PasscodeVerificationConfig].regime shouldBe regime
     }
 
     "throw an exception if it could not find it in the config" in {
       Play.start(fakeApplication(configWithoutKeys))
 
       intercept[PasscodeVerificationException] {
-        PasscodeVerificationConfig.regime
+        app.get.injector.instanceOf[PasscodeVerificationConfig].regime
       }.getMessage should not be empty
 
     }
@@ -79,14 +83,15 @@ class PasscodeVerificationConfigSpec extends UnitSpec with BeforeAndAfterEach {
       val otac = "1234"
       val req = FakeRequest("GET", s"/my-url?p=$otac")
 
-      PasscodeVerificationConfig.loginUrl(req) shouldBe s"http://$host:$port/verification/otac/login?${PasscodeVerificationConfig.tokenParam}=$otac"
+      val passcodeConfig = app.get.injector.instanceOf[PasscodeVerificationConfig]
+      passcodeConfig.loginUrl(req) shouldBe s"http://$host:$port/verification/otac/login?${passcodeConfig.tokenParam}=$otac"
     }
     "build a login url without a token if there is no query param with the user token in the request" in {
       Play.start(fakeApplication(config))
 
       val req = FakeRequest("GET", s"/my-url")
 
-      PasscodeVerificationConfig.loginUrl(req) shouldBe s"http://$host:$port/verification/otac/login"
+      app.get.injector.instanceOf[PasscodeVerificationConfig].loginUrl(req) shouldBe s"http://$host:$port/verification/otac/login"
     }
   }
 }
