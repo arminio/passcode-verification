@@ -31,9 +31,9 @@ private object AppDependencies {
   val compile = Seq(
     "com.typesafe.play" %% "play" % PlayVersion.current % "provided",
     ws % "provided",
-    "uk.gov.hmrc" %% "play-authorised-frontend" % "6.2.0",
-    "uk.gov.hmrc" %% "play-config" % "3.0.0",
-    "uk.gov.hmrc" %% "play-auditing" % "2.4.0"
+    "uk.gov.hmrc" %% "play-authorised-frontend" % "6.3.0",
+    "uk.gov.hmrc" %% "play-config" % "4.3.0",
+    "uk.gov.hmrc" %% "play-auditing" % "2.6.0"
   )
 
   val testScope: String = "test"
@@ -42,7 +42,7 @@ private object AppDependencies {
     "org.scalatest" %% "scalatest" % "2.2.6" % testScope,
     "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % testScope,
     "org.pegdown" % "pegdown" % "1.4.2" % testScope,
-    "uk.gov.hmrc" %% "hmrctest" % "2.1.0" % testScope
+    "uk.gov.hmrc" %% "hmrctest" % "2.3.0" % testScope
 
   )
 
