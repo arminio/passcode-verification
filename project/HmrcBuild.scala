@@ -33,7 +33,7 @@ private object AppDependencies {
     ws % "provided",
     "uk.gov.hmrc" %% "play-authorised-frontend" % "6.3.0",
     "uk.gov.hmrc" %% "play-config" % "4.3.0",
-    "uk.gov.hmrc" %% "play-auditing" % "2.6.0"
+    "uk.gov.hmrc" %% "play-auditing" % "2.10.0"
   )
 
   val testScope: String = "test"
